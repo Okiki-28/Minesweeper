@@ -1,247 +1,120 @@
 import tkinter as tk
-import random
+from tkinter import *
+import Game
+import Settings
 
-def on_left_click(event):
-    event.widget.config(bg="white")
-    event.widget.config(text="1")
 
-def on_right_click(event):
-    event.widget.config(text="$")
 
+def getFrameWidth(frame):
+    width = frame.winfo_width()
+    print(f"Frame width: {width}")
+
+#Root Init
 root = tk.Tk()
-root.title("Greeting App with Grid")
-root.geometry("400x400")
+root.geometry("800x800")
+root.config(background="#ceeddf")
 
+#Splitting root into grid
+root.columnconfigure((0, 1, 2, 3, 4), weight=1)
 
+root.rowconfigure((0, 1, 2, 4, 5), weight=1)
+root.rowconfigure(3, weight=15)
 
-class MineBoard():
+#Top bar
+topBar = tk.Frame(root, height=50, background="teal")
+topBar.grid(row=0, column=0, columnspan=5, sticky="new")
+
+#Splitting top bar into grid
+topBar.columnconfigure((0, 1, 2), weight=1)
+topBar.rowconfigure(0, weight=1)
+
+#High Score Label
+highscoreLbl = tk.Label(topBar, text=f"High Score: 0000", fg="teal",\
+                        font=("Tahoma", 12, "bold"), bg="white" )
+highscoreLbl.grid(row=0, column=0, pady=10, padx=10, sticky="w")
+
+#Connect button
+connectBtn = tk.Button(topBar, text="Connect", fg="teal", font=("Tahoma", 12, "bold"),\
+                       bg="white", bd=3, relief="raised",)
+connectBtn.grid(row=0, column=2, pady=10, padx=10, sticky="e")
+
+#Heading
+header = tk.Label(root, text="MINESWEEPER", fg="teal", font=("Tahoma", 35, "bold"),\
+                  bg="white", highlightbackground="teal", highlightthickness=3)
+header.grid(row=1, column=2, rowspan=2, sticky="news", padx=50)
+
+#Game options
+optionsFrame = tk.Frame(root, background="white", highlightbackground="teal",\
+                        highlightthickness=3)
+optionsFrame.grid(row=3, column=1, columnspan=3, sticky="news",\
+                  padx=100, pady=100)
+
+#Game options frame into grid
+optionsFrame.columnconfigure((0, 1, 2, 3), weight=1, uniform="a")
+
+optionsFrame.rowconfigure((0, 1, 2, 3, 4), weight=1)
+
+#Play game function
+Ongoing = False
+def PlayGame():
+    global Ongoing
+    if Ongoing:
+        print("Game in progress...")
+        return
+    else:
+        Ongoing = True
+        GameWindow = Game.Main()
+        startGameBtn.config(state="disabled")
+
+    def on_close():
+        global Ongoing
+        Ongoing = False
+        startGameBtn.config(state="normal")
+        GameWindow.destroy()
+
+    GameWindow.protocol("WM_DELETE_WINDOW", on_close)
+
+#StartGame button                        
+startGameBtn = tk.Button(optionsFrame, text="PLAY", relief="groove",\
+                         font=("Tahoma", 25, "bold"), fg="white", bg="teal", bd=3,\
+                         command=PlayGame)
+startGameBtn.grid(row=1, column=1, columnspan=2, ipadx=30)
+
+#Achievements frame
+def showAchievements():
+    achievementsFrame = tk.Frame(root, background="teal", highlightbackground="teal",\
+                         highlightthickness=3)
+    achievementsFrame.columnconfigure((0, 1, 2), weight=1, uniform='a')
+    achievementsFrame.rowconfigure((0, 1, 2), weight=1, uniform='a')
     
-    def __init__(self):
-        self.__numRow = 16
-        self.__mineNumber = 40
-        self.__cellIndex = []
-        self.__mineIndex = []
-        self.__openingCells = []
-
-        self.totalFlags = self.__mineNumber
-        self.availableCells = (self.__numRow**2)-self.__mineNumber
-        self.openedCells = 0
-        self.flaggedCells = 0
-
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()        
-        self.frameSize = self.__mineNumber*Cell(self, root, -1).getSize()
-        self.frame = tk.Frame(root, width=self.frameSize, height=self.frameSize, background="red")
-        self.frame.place(x=(screen_width-100)-(self.frameSize), y=50)
+    def destroyAchievements():
+        achievementsFrame.destroy()
         
-        #Array of mine indexes
-        for i in range(self.__mineNumber):
-            randIndex = random.randrange(1, self.__numRow**2)
-            while randIndex in self.__mineIndex:
-                randIndex = random.randrange(1, self.__numRow**2)
-            self.__mineIndex.append(randIndex)
-        self.placeCells()
-        emptyCell = [cell for cell in self.__cellIndex if cell.mineCount == 0 and not isinstance(cell, MineCell)]
-        firstCell = random.choice(emptyCell)
-        firstCell.firstCell()
-        print(sorted(self.__mineIndex))
+    achievementsFrame.grid(row=3, column=1, columnspan=3, sticky="news",\
+                  padx=50, pady=100)
 
-    def placeCells(self):
-        self.cellSize = Cell(self, self.frame, 0).getSize()
+    achievementsHeader = tk.Label(achievementsFrame, text="ACHIEVEMENTS", fg="teal", font=("Tahoma", 30, "bold"),\
+                  bg="white", highlightbackground="teal", highlightthickness=1)
+    achievementsHeader.grid(row=0, column=0, columnspan=3, sticky="ew", pady=25)
 
-        #Arranging cells into array
-        for i in range(self.__numRow**2):
-            if i in self.__mineIndex:
-                cellSquare = MineCell(self, self.frame, i)
-            else:
-                cellSquare = Cell(self, self.frame, i)
-            self.__cellIndex.append(cellSquare)
-            self.identifyCloseCells(i)
+    achievementsCancelBtn = tk.Button(achievementsFrame, text="Cancel", fg="white", bd=0,\
+                                  background="teal", command=destroyAchievements)
+    achievementsCancelBtn.grid(row=2, column=2, sticky="se")
 
-        self.assignNumbers()
+#Achievement button                        
+achievementsBtn = tk.Button(optionsFrame, text="Achievements", relief="groove",\
+                         font=("Tahoma", 25, "bold"), fg="white", bg="teal", bd=3,\
+                            command=showAchievements)
+achievementsBtn.grid(row=2, column=1, columnspan=2, ipadx=30)
 
-        #Placing cells inside frame
-        x_cood = 0
-        y_cood = 0
-        for j, cellSquare in enumerate(self.__cellIndex):
-            cellSquare.cood = (x_cood, y_cood)
-            cellSquare.placeCell(x_cood*self.cellSize, y_cood*self.cellSize)
-            x_cood += 1
-            if (j+1) % self.__numRow == 0:
-                x_cood = 0
-                y_cood += 1
-
-    def identifyCloseCells(self, index):
-        self.__closeCells = []
-        row = index//self.__numRow
-        column = index%self.__numRow
-
-        if not column-1<0:
-            self.__closeCells.append(((row-1)*self.__numRow)+(column-1))
-            self.__closeCells.append(((row)*self.__numRow)+(column-1))
-            self.__closeCells.append(((row+1)*self.__numRow)+(column-1))
-
-        self.__closeCells.append(((row-1)*self.__numRow)+column)
-        self.__closeCells.append(((row+1)*self.__numRow)+column)
-        
-        if not column+1 > (self.__numRow-1):
-            self.__closeCells.append(((row-1)*self.__numRow)+(column+1))
-            self.__closeCells.append(((row)*self.__numRow)+(column+1))
-            self.__closeCells.append(((row+1)*self.__numRow)+(column+1))
-        self.__closeCells = [i for i in self.__closeCells if 0<= i < (self.__numRow**2)]
-        self.__cellIndex[index].closeCells = self.__closeCells
-        return self.__closeCells
-
-    def assignNumbers(self):
-        for i in sorted(self.__mineIndex):
-            self.__closeCells = self.__cellIndex[i].closeCells
-            for j in self.__closeCells:
-                if not type(self.__cellIndex[j]).__name__ == "MineCell":
-                    self.__cellIndex[j].addMineCount()
-
-    def win(self):
-        pass
+#Settings frame
+def showSettings():
+    Settings.Display(root)
     
-            
-
-class Cell():
-    def __init__(self, Board, Frame, i):
-        self.__size = 25
-        self.__color = "grey"
-        self.__fontSize = 12
-        self.__cell = tk.Button(Frame, bg="grey", text="", font=("Helvetica", 8), borderwidth=2, relief="raised")
-        self.__eventFunctions()
-        self.closeCells = []
-        self.mineCount = 0
-        self.cood = ()
-        self.flag = "\U0001F3C1" 
-        self.i = i
-        self.Board = Board
-        self.revealed = False
-        self.flagged = False
-        self.flagCount = 0
-
-    def getSize(self):
-        return self.__size
-
-    def firstCell(self):
-        self.__cell.config(bg="green")
-
-    def placeCell(self, x_cood, y_cood):
-        self.__cell.place(x=x_cood, y=y_cood, width=self.__size, height=self.__size)
-
-    def revealCell(self, event=None):
-        if self.revealed == True:
-            if self.flagCount == self.mineCount:
-                self.checkCell()
-            elif self.flagCount > self.mineCount:
-                return
-            return
-        self.revealed = True
-        if self.mineCount == 0:
-            cellText = ""
-        else:
-            cellText = str(self.mineCount)
-        event.widget.config(bg="white", fg="black", text=cellText)
-        self.__cell.bind("<Button-3>", self.emptyFunc)
-        self.Board.openedCells += 1
-        if self.mineCount == 0:
-            self.checkCell()
-        self.checkWin()
-        return cellText
-
-    def nonEventRevealCell(self):
-        if self.flagged == True:
-            return
-        self.revealed = True
-        cellText = str(self.mineCount)
-        if self.mineCount == 0:
-            cellText = ""
-        else:
-            cellText = str(self.mineCount)
-        self.__cell.config(bg="white", fg="black", text=cellText, font=("Helvetica", 8))
-        self.__cell.bind("<Button-3>", self.emptyFunc)
-        self.Board.openedCells += 1
-        if self.mineCount == 0:
-            self.checkCell()
-
-    def checkCell(self):
-        for i in self.closeCells:
-            cell = self.Board._MineBoard__cellIndex[i]
-            if not isinstance(cell, MineCell) and not cell.revealed:
-                cell.nonEventRevealCell()
-            elif isinstance(cell, MineCell) and not cell.flagged:
-                print("!!!")
-                cell.endGame()
-        self.checkWin()
-        
-
-    def flagCell(self, event):
-        self.flagged = True
-        self.Board.totalFlags -= 1
-        for i in self.closeCells:
-            cell = self.Board._MineBoard__cellIndex[i]
-            cell.flagCount += 1
-        event.widget.config(text=self.flag, fg="red", font=("Helvetica", 12))
-        self._Cell__cell.bind("<Button-3>", self.unflagCell)
-        
-
-    def unflagCell(self, event):
-        self.flagged = False
-        self.Board.totalFlags += 1
-        for i in self.closeCells:
-            cell = self.Board._MineBoard__cellIndex[i]
-            cell.flagCount -= 1
-        event.widget.config(text="", fg="black", font=("Helvetica", 8))
-        self._Cell__cell.bind("<Button-3>", self.flagCell)
-
-    def openCells(self):
-        pass
+#Settings button                        
+settingsBtn = tk.Button(optionsFrame, text="Game Settings", relief="groove",\
+                         font=("Tahoma", 25, "bold"), fg="white", bg="teal", bd=3,\
+                         command=showSettings)
+settingsBtn.grid(row=3, column=1, columnspan=2, ipadx=30)
 
 
-    def emptyFunc(self, event):
-        return
-
-    def getText(self):
-        pass
-
-    def addMineCount(self):
-        if type(self.mineCount).__name__ == "str":
-            self.mineCount = 0
-        self.mineCount += 1
-
-    def __eventFunctions(self):
-        self.__cell.bind("<Button-1>", self.revealCell)
-        self.__cell.bind("<Button-3>", self.flagCell)
-
-    def checkWin(self):
-        if self.Board.availableCells == self.Board.openedCells:
-            self.Board.win()
-        # print(f"Flagged: {self.Board.totalFlags}")
-        # print(f"opened: {self.Board.openedCells}")
-
-
-class MineCell(Cell):
-    def __init__(self, Board, Frame, i):
-        super().__init__(Board, Frame, i)
-
-    def revealCell(self, event):
-        self.endGame()
-
-    def openCell(self):
-        self._Cell__cell.config(bg="red", text=self.getText())
-        self._Cell__cell.bind("<Button-3>", self.emptyFunc)
-
-    def endGame(self):
-        for i in self.Board._MineBoard__mineIndex:
-            cell = self.Board._MineBoard__cellIndex[i]
-            cell.openCell()
-
-    def openCells(self, i):
-        return
-
-    def nonEventRevealCell(self):
-        return
-
-Board1 = MineBoard()
-root.mainloop()
